@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>C‑Terminal Playground</title>
 
-  <!-- 스타일시트 -->
+  <!-- 스타일 -->
   <link rel="stylesheet" href="styles.css" />
 
   <!-- Blockly -->
@@ -29,21 +29,23 @@
     <!-- 플레이그라운드 -->
     <section id="playground-section" class="section" style="display:block;">
       <div class="playground-container">
+        <!-- 헤더 -->
         <div class="playground-header">
           <div class="project-info">
-            <input type="text" id="project-title" placeholder="제목 없는 프로젝트" value="제목 없는 프로젝트" />
-            <span class="project-status" id="project-status">새 프로젝트</span>
+            <input id="project-title" type="text" value="제목 없는 프로젝트" placeholder="제목 없는 프로젝트" />
+            <span id="project-status" class="project-status">새 프로젝트</span>
           </div>
           <div class="playground-actions">
-            <button id="save-btn"  class="btn btn-outline"><i class="fas fa-save"></i> 저장</button>
+            <button id="save-btn" class="btn btn-outline"><i class="fas fa-save"></i> 저장</button>
             <button id="share-btn" class="btn btn-outline"><i class="fas fa-share-alt"></i> 공유</button>
-            <button id="run-btn"   class="btn btn-primary"><i class="fas fa-play"></i> 실행</button>
+            <button id="run-btn" class="btn btn-primary"><i class="fas fa-play"></i> 실행</button>
           </div>
         </div>
 
+        <!-- 콘텐츠 -->
         <div class="playground-content">
           <div id="blockly-container"></div>
-          <div class="resize-handle" id="resize-handle"></div>
+          <div id="resize-handle" class="resize-handle"></div>
 
           <div class="terminal-container">
             <div class="terminal-header">
@@ -58,6 +60,23 @@
       </div>
     </section>
   </main>
+
+  <!-- (숨김) 툴박스 정의 ── CategoryToolbox → XML 방식으로 명시 -->
+  <xml id="toolbox" style="display:none">
+    <category name="로직" colour="#5C81A6">
+      <block type="controls_if"></block>
+      <block type="logic_compare"></block>
+    </category>
+    <category name="수학" colour="#5CA65C">
+      <block type="math_number"></block>
+      <block type="math_arithmetic"></block>
+    </category>
+    <sep></sep>
+    <category name="터미널" colour="#333333">
+      <block type="terminal_print"></block>
+      <block type="terminal_clear"></block>
+    </category>
+  </xml>
 
   <!-- 플레이그라운드 전용 스크립트 -->
   <script src="playground.js"></script>
