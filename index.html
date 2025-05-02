@@ -61,24 +61,28 @@
     </section>
   </main>
 
-  <!-- (숨김) 툴박스 정의 ── CategoryToolbox → XML 방식으로 명시 -->
+  <!-- ────── 풀‑툴박스 정의 ────── -->
   <xml id="toolbox" style="display:none">
-    <category name="로직" colour="#5C81A6">
-      <block type="controls_if"></block>
-      <block type="logic_compare"></block>
-    </category>
-    <category name="수학" colour="#5CA65C">
-      <block type="math_number"></block>
-      <block type="math_arithmetic"></block>
-    </category>
+    <!-- 기본 제공 카테고리 -->
+    <category name="로직"     categorystyle="logic_category"></category>
+    <category name="루프"     categorystyle="loop_category"></category>
+    <category name="수학"     categorystyle="math_category"></category>
+    <category name="텍스트"   categorystyle="text_category"></category>
+    <category name="목록"     categorystyle="list_category"></category>
+    <category name="색상"     categorystyle="colour_category"></category>
     <sep></sep>
+    <!-- 변수 / 함수는 Blockly 쪽에서 동적으로 채우도록 custom 속성 사용 -->
+    <category name="변수"     categorystyle="variable_category"  custom="VARIABLE"></category>
+    <category name="함수"     categorystyle="procedure_category" custom="PROCEDURE"></category>
+    <sep></sep>
+    <!-- 사용자 정의: 터미널 -->
     <category name="터미널" colour="#333333">
       <block type="terminal_print"></block>
       <block type="terminal_clear"></block>
     </category>
   </xml>
 
-  <!-- 플레이그라운드 전용 스크립트 -->
+  <!-- 플레이그라운드 스크립트 -->
   <script src="playground.js"></script>
 </body>
 </html>
