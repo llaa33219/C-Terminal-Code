@@ -145,39 +145,44 @@ const toolbox = {
    2)  커스텀 테마 (기존 색상 유지)  :contentReference[oaicite:1]{index=1}:contentReference[oaicite:2]{index=2}
    ─────────────────────────────── */
 const customTheme = Blockly.Theme.defineTheme('simpleRounded', {
-  base: Blockly.Themes.Classic,
-  blockStyles: {
-    logic_blocks:{colourPrimary:'#6b96c1'},
-    loop_blocks:{colourPrimary:'#6bc16b'},
-    math_blocks:{colourPrimary:'#5cd65c'},
-    text_blocks:{colourPrimary:'#c16bc1'},
-    variable_blocks:{colourPrimary:'#c18b6b'},
-    procedure_blocks:{colourPrimary:'#8b6bc1'},
-    terminal_blocks:{colourPrimary:'#5a5a5a'},
-    styling_blocks:{colourPrimary:'#ffad33'},
-    output_blocks:{colourPrimary:'#33adff'},
-    animation_blocks:{colourPrimary:'#ff3377'},
-    chart_blocks:{colourPrimary:'#33ddff'},
-    ui_blocks:{colourPrimary:'#b333ff'},
-    list_blocks:{colourPrimary:'#c18b6b'},
-    array_blocks:{colourPrimary:'#c18b6b'},
-    string_blocks:{colourPrimary:'#c16bc1'},
-    time_blocks:{colourPrimary:'#6b96c1'},
-    game_blocks:{colourPrimary:'#ff6b6b'},
-    algorithm_blocks:{colourPrimary:'#8d6e63'}
-  },
-  componentStyles:{
-    workspaceBackgroundColour:'#f5f5f5',
-    toolboxBackgroundColour:'#fafafa',
-    toolboxForegroundColour:'#333',
-    flyoutBackgroundColour:'#f0f0f0',
-    flyoutForegroundColour:'#333',
-    flyoutOpacity:0.9,
-    scrollbarColour:'#bbb',
-    scrollbarOpacity:0.5
-  },
-  fontStyle:{family:'Arial, sans-serif', weight:'bold', size:11}
-});
+    'base': Blockly.Themes.Classic,
+        'blockStyles': {
+            // 각 카테고리별 색상 조정 - 더 밝고 선명하게
+            'logic_blocks': { 'colourPrimary': '#6b96c1' },
+            'loop_blocks': { 'colourPrimary': '#6bc16b' },
+            'math_blocks': { 'colourPrimary': '#5cd65c' },
+            'text_blocks': { 'colourPrimary': '#c16bc1' },
+            'variable_blocks': { 'colourPrimary': '#c18b6b' },
+            'procedure_blocks': { 'colourPrimary': '#8b6bc1' },
+            'terminal_blocks': { 'colourPrimary': '#5a5a5a' },
+            'styling_blocks': { 'colourPrimary': '#ffad33' },
+            'output_blocks': { 'colourPrimary': '#33adff' },
+            'animation_blocks': { 'colourPrimary': '#ff3377' },
+            'chart_blocks': { 'colourPrimary': '#33ddff' },
+            'ui_blocks': { 'colourPrimary': '#b333ff' },
+            'list_blocks': { 'colourPrimary': '#c18b6b' },
+            'array_blocks': { 'colourPrimary': '#c18b6b' },
+            'string_blocks': { 'colourPrimary': '#c16bc1' },
+            'time_blocks': { 'colourPrimary': '#6b96c1' },
+            'game_blocks': { 'colourPrimary': '#ff6b6b' },
+            'algorithm_blocks': { 'colourPrimary': '#8d6e63' }
+        },
+        'componentStyles': {
+            'workspaceBackgroundColour': '#f5f5f5',
+            'toolboxBackgroundColour': '#fafafa',
+            'toolboxForegroundColour': '#333',
+            'flyoutBackgroundColour': '#f0f0f0',
+            'flyoutForegroundColour': '#333',
+            'flyoutOpacity': 0.9,
+            'scrollbarColour': '#bbb',
+            'scrollbarOpacity': 0.5
+        },
+        'fontStyle': {
+            'family': 'Arial, sans-serif',
+            'weight': 'bold', // 전체 텍스트 볼드 처리
+            'size': 11 // 전체 텍스트 크기 조정
+          }
+        });
 
 /* ───────────────────────────────
    3)  초기화
