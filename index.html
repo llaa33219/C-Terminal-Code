@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>C‑Terminal Playground</title>
+
+  <!-- 스타일시트 -->
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Blockly -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/blockly/9.3.3/blockly.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/blockly/9.3.3/blocks.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/blockly/9.3.3/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/blockly/9.3.3/msg/ko.min.js"></script>
+
+  <!-- XTerm -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.min.js"></script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- 사용자 정의 블록 -->
+  <script src="custom_blocks.js"></script>
+</head>
+<body>
+  <main>
+    <!-- 플레이그라운드 -->
+    <section id="playground-section" class="section" style="display:block;">
+      <div class="playground-container">
+        <div class="playground-header">
+          <div class="project-info">
+            <input type="text" id="project-title" placeholder="제목 없는 프로젝트" value="제목 없는 프로젝트" />
+            <span class="project-status" id="project-status">새 프로젝트</span>
+          </div>
+          <div class="playground-actions">
+            <button id="save-btn"  class="btn btn-outline"><i class="fas fa-save"></i> 저장</button>
+            <button id="share-btn" class="btn btn-outline"><i class="fas fa-share-alt"></i> 공유</button>
+            <button id="run-btn"   class="btn btn-primary"><i class="fas fa-play"></i> 실행</button>
+          </div>
+        </div>
+
+        <div class="playground-content">
+          <div id="blockly-container"></div>
+          <div class="resize-handle" id="resize-handle"></div>
+
+          <div class="terminal-container">
+            <div class="terminal-header">
+              <span>터미널</span>
+              <button id="clear-terminal-btn" class="btn btn-small">
+                <i class="fas fa-trash"></i> 지우기
+              </button>
+            </div>
+            <div id="terminal"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 플레이그라운드 전용 스크립트 -->
+  <script src="playground.js"></script>
+</body>
+</html>
