@@ -2702,3 +2702,1420 @@ Blockly.JavaScript['terminal_histogram'] = function(block) {
   })();
   `;
 };
+/**
+ * C-Terminal 상호작용 블록 정의
+ * 사용자와 터미널 간의 상호작용에 특화된 블록들을 제공합니다.
+ */
+
+// 상호작용 블록 색상 설정
+const INTERACTION_BLOCK_COLOR = '#FF5722';
+const KEYBOARD_BLOCK_COLOR = '#E91E63';
+const MENU_BLOCK_COLOR = '#9C27B0';
+const FORM_BLOCK_COLOR = '#673AB7';
+const GAME_INTERACTION_BLOCK_COLOR = '#FF4081';
+
+/**
+ * 텍스트 입력 받기 블록 정의
+ */
+Blockly.Blocks['interaction_text_input'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("텍스트 입력 받기")
+        .appendField(new Blockly.FieldTextInput("질문을 입력하세요:"), "PROMPT");
+    this.appendDummyInput()
+        .appendField("기본값")
+        .appendField(new Blockly.FieldTextInput(""), "DEFAULT");
+    this.setOutput(true, "String");
+    this.setColour(INTERACTION_BLOCK_COLOR);
+    this.setTooltip("사용자로부터 텍스트 입력을 받습니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_text_input'] = function(block) {
+  const prompt = block.getFieldValue('PROMPT');
+  const defaultValue = block.getFieldValue('DEFAULT');
+  
+  const code = `await prompt("${prompt}", "${defaultValue}")`;
+  return [code, Blockly.JavaScript.ORDER_AWAIT];
+};
+
+/**
+ * 숫자 입력 받기 블록 정의
+ */
+Blockly.Blocks['interaction_number_input'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("숫자 입력 받기")
+        .appendField(new Blockly.FieldTextInput("숫자를 입력하세요:"), "PROMPT");
+    this.appendDummyInput()
+        .appendField("기본값")
+        .appendField(new Blockly.FieldNumber(0), "DEFAULT");
+    this.setOutput(true, "Number");
+    this.setColour(INTERACTION_BLOCK_COLOR);
+    this.setTooltip("사용자로부터 숫자 입력을 받습니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_number_input'] = function(block) {
+  const prompt = block.getFieldValue('PROMPT');
+  const defaultValue = block.getFieldValue('DEFAULT');
+  
+  const code = `
+  (async function() {
+    let input;
+    let isValid = false;
+    
+    while (!isValid) {
+      input = await prompt("${prompt}", "${defaultValue}");
+      
+      // 숫자로 변환 시도
+      const num = Number(input);
+      if (!isNaN(num)) {
+        isValid = true;
+        return num;
+      } else {
+        console.log("\\u001b[31m유효한 숫자를 입력해주세요.\\u001b[0m");
+      }
+    }
+  })()
+  `;
+  
+  return [code, Blockly.JavaScript.ORDER_AWAIT];
+};
+
+/**
+ * 확인 대화상자 블록 정의
+ */
+Blockly.Blocks['interaction_confirm'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("확인 받기")
+        .appendField(new Blockly.FieldTextInput("계속 진행하시겠습니까?"), "PROMPT");
+    this.setOutput(true, "Boolean");
+    this.setColour(INTERACTION_BLOCK_COLOR);
+    this.setTooltip("사용자에게 예/아니오 확인을 받습니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_confirm'] = function(block) {
+  const prompt = block.getFieldValue('PROMPT');
+  
+  const code = `
+  (async function() {
+    console.log("\\u001b[33m${prompt} (y/n)\\u001b[0m");
+    
+    let answer = '';
+    while (answer !== 'y' && answer !== 'n') {
+      answer = (await prompt("(y/n): ")).toLowerCase().trim();
+      
+      if (answer !== 'y' && answer !== 'n') {
+        console.log("\\u001b[31m'y' 또는 'n'을 입력해주세요.\\u001b[0m");
+      }
+    }
+    
+    return answer === 'y';
+  })()
+  `;
+  
+  return [code, Blockly.JavaScript.ORDER_AWAIT];
+};
+
+/**
+ * 선택 목록 블록 정의
+ */
+Blockly.Blocks['interaction_select'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("선택 목록")
+        .appendField(new Blockly.FieldTextInput("옵션을 선택하세요:"), "PROMPT");
+    this.appendDummyInput()
+        .appendField("옵션 (쉼표로 구분)")
+        .appendField(new Blockly.FieldTextInput("옵션1,옵션2,옵션3"), "OPTIONS");
+    this.setOutput(true, "String");
+    this.setColour(INTERACTION_BLOCK_COLOR);
+    this.setTooltip("사용자에게 선택 목록을 제시하고 선택을 받습니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_select'] = function(block) {
+  const prompt = block.getFieldValue('PROMPT');
+  const optionsString = block.getFieldValue('OPTIONS');
+  
+  const code = `
+  (async function() {
+    const options = "${optionsString}".split(',');
+    
+    if (options.length === 0) {
+      console.log("\\u001b[31m선택 옵션이 없습니다.\\u001b[0m");
+      return null;
+    }
+    
+    console.log("\\u001b[36m${prompt}\\u001b[0m");
+    
+    // 옵션 출력
+    for (let i = 0; i < options.length; i++) {
+      console.log(\`\${i + 1}. \${options[i].trim()}\`);
+    }
+    
+    // 사용자 선택 받기
+    let selection = -1;
+    while (selection < 1 || selection > options.length) {
+      const input = await prompt("번호 입력: ");
+      selection = parseInt(input);
+      
+      if (isNaN(selection) || selection < 1 || selection > options.length) {
+        console.log(\`\\u001b[31m1부터 \${options.length} 사이의 번호를 입력해주세요.\\u001b[0m\`);
+      }
+    }
+    
+    return options[selection - 1].trim();
+  })()
+  `;
+  
+  return [code, Blockly.JavaScript.ORDER_AWAIT];
+};
+
+/**
+ * 비밀번호 입력 블록 정의
+ */
+Blockly.Blocks['interaction_password'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("비밀번호 입력 받기")
+        .appendField(new Blockly.FieldTextInput("비밀번호를 입력하세요:"), "PROMPT");
+    this.appendDummyInput()
+        .appendField("마스킹 문자")
+        .appendField(new Blockly.FieldTextInput("*"), "MASK");
+    this.setOutput(true, "String");
+    this.setColour(INTERACTION_BLOCK_COLOR);
+    this.setTooltip("사용자로부터 비밀번호를 입력받고 입력 내용을 마스킹합니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_password'] = function(block) {
+  const prompt = block.getFieldValue('PROMPT');
+  const mask = block.getFieldValue('MASK');
+  
+  const code = `
+  (async function() {
+    console.log("\\u001b[33m${prompt}\\u001b[0m");
+    let password = "";
+    let reading = true;
+    
+    terminal.write(">");
+    
+    // 키 입력 이벤트 처리
+    const disposable = terminal.onKey(e => {
+      const ev = e.domEvent;
+      const printable = !ev.altKey && !ev.ctrlKey && !ev.metaKey;
+      
+      if (ev.keyCode === 13) { // Enter
+        reading = false;
+        terminal.write("\\r\\n");
+      } else if (ev.keyCode === 8) { // Backspace
+        if (password.length > 0) {
+          password = password.substr(0, password.length - 1);
+          terminal.write("\\b \\\b");
+        }
+      } else if (printable) {
+        password += ev.key;
+        terminal.write("${mask}");
+      }
+    });
+    
+    // 비밀번호 입력 완료 대기
+    while (reading) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    // 이벤트 리스너 제거
+    disposable.dispose();
+    
+    return password;
+  })()
+  `;
+  
+  return [code, Blockly.JavaScript.ORDER_AWAIT];
+};
+
+/**
+ * 키 입력 대기 블록 정의
+ */
+Blockly.Blocks['interaction_wait_key'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("키 입력 대기")
+        .appendField(new Blockly.FieldTextInput("아무 키나 눌러 계속하세요..."), "PROMPT");
+    this.setOutput(true, "String");
+    this.setColour(KEYBOARD_BLOCK_COLOR);
+    this.setTooltip("사용자가 키를 누를 때까지 대기하고 누른 키를 반환합니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_wait_key'] = function(block) {
+  const prompt = block.getFieldValue('PROMPT');
+  
+  const code = `
+  (async function() {
+    console.log("\\u001b[33m${prompt}\\u001b[0m");
+    
+    let key = '';
+    const keyPromise = new Promise(resolve => {
+      const disposable = terminal.onKey(e => {
+        key = e.key;
+        disposable.dispose();
+        resolve();
+      });
+    });
+    
+    await keyPromise;
+    console.log(""); // 줄바꿈
+    return key;
+  })()
+  `;
+  
+  return [code, Blockly.JavaScript.ORDER_AWAIT];
+};
+
+/**
+ * 특정 키 대기 블록 정의
+ */
+Blockly.Blocks['interaction_wait_specific_key'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("특정 키 대기")
+        .appendField(new Blockly.FieldDropdown([
+          ["엔터", "Enter"],
+          ["스페이스바", " "],
+          ["ESC", "Escape"],
+          ["탭", "Tab"],
+          ["화살표 위", "ArrowUp"],
+          ["화살표 아래", "ArrowDown"],
+          ["화살표 왼쪽", "ArrowLeft"],
+          ["화살표 오른쪽", "ArrowRight"]
+        ]), "KEY")
+        .appendField("메시지")
+        .appendField(new Blockly.FieldTextInput("계속하려면 키를 누르세요..."), "PROMPT");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(KEYBOARD_BLOCK_COLOR);
+    this.setTooltip("사용자가 특정 키를 누를 때까지 대기합니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_wait_specific_key'] = function(block) {
+  const key = block.getFieldValue('KEY');
+  const prompt = block.getFieldValue('PROMPT');
+  
+  const code = `
+  await (async function() {
+    console.log("\\u001b[33m${prompt} (${key})\\u001b[0m");
+    
+    return new Promise(resolve => {
+      const disposable = terminal.onKey(e => {
+        const ev = e.domEvent;
+        if (ev.key === "${key}") {
+          disposable.dispose();
+          console.log(""); // 줄바꿈
+          resolve();
+        }
+      });
+    });
+  })();
+  `;
+  
+  return code;
+};
+
+/**
+ * 키보드 이벤트 감지 블록 정의
+ */
+Blockly.Blocks['interaction_on_key'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("키 입력 감지 시작");
+    this.appendStatementInput("DO")
+        .setCheck(null)
+        .appendField("실행");
+    this.appendDummyInput()
+        .appendField("감지 변수")
+        .appendField(new Blockly.FieldVariable("key"), "KEY_VAR");
+    this.appendDummyInput()
+        .appendField("중지 변수")
+        .appendField(new Blockly.FieldVariable("stopListening"), "STOP_VAR");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(KEYBOARD_BLOCK_COLOR);
+    this.setTooltip("키보드 입력을 감지하고 지정된 코드를 실행합니다. 중지하려면 중지 변수를 true로 설정하세요.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_on_key'] = function(block) {
+  const keyVar = Blockly.JavaScript.variableDB_.getName(
+      block.getFieldValue('KEY_VAR'), Blockly.Variables.NAME_TYPE);
+  const stopVar = Blockly.JavaScript.variableDB_.getName(
+      block.getFieldValue('STOP_VAR'), Blockly.Variables.NAME_TYPE);
+  const statements = Blockly.JavaScript.statementToCode(block, 'DO');
+  
+  const code = `
+  (function() {
+    let ${stopVar} = false;
+    const disposable = terminal.onKey(e => {
+      if (!${stopVar}) {
+        const ${keyVar} = e.domEvent.key;
+        ${statements}
+      } else {
+        disposable.dispose();
+      }
+    });
+  })();
+  `;
+  
+  return code;
+};
+
+/**
+ * 메뉴 표시 블록 정의
+ */
+Blockly.Blocks['interaction_show_menu'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("메뉴 표시")
+        .appendField(new Blockly.FieldTextInput("메뉴 제목"), "TITLE");
+    this.appendDummyInput()
+        .appendField("항목들 (쉼표로 구분)")
+        .appendField(new Blockly.FieldTextInput("항목1,항목2,항목3"), "ITEMS");
+    this.appendDummyInput()
+        .appendField("강조 스타일")
+        .appendField(new Blockly.FieldDropdown([
+          ["색상 반전", "invert"],
+          ["하이라이트", "highlight"],
+          ["굵은 글씨", "bold"],
+          ["밑줄", "underline"]
+        ]), "STYLE");
+    this.setOutput(true, "Number");
+    this.setColour(MENU_BLOCK_COLOR);
+    this.setTooltip("선택 가능한 메뉴를 표시하고 사용자의 선택을 반환합니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_show_menu'] = function(block) {
+  const title = block.getFieldValue('TITLE');
+  const itemsString = block.getFieldValue('ITEMS');
+  const style = block.getFieldValue('STYLE');
+  
+  const code = `
+  (async function() {
+    const menuItems = "${itemsString}".split(',').map(item => item.trim());
+    let selectedIndex = 0;
+    let running = true;
+    
+    // 스타일 함수
+    function applyStyle(text, isSelected) {
+      if (!isSelected) return text;
+      
+      switch("${style}") {
+        case "invert":
+          return "\\u001b[7m" + text + "\\u001b[27m";
+        case "highlight":
+          return "\\u001b[44m\\u001b[37m" + text + "\\u001b[0m";
+        case "bold":
+          return "\\u001b[1m" + text + "\\u001b[22m";
+        case "underline":
+          return "\\u001b[4m" + text + "\\u001b[24m";
+        default:
+          return text;
+      }
+    }
+    
+    // 메뉴 렌더링 함수
+    function renderMenu() {
+      console.log("\\u001b[2J\\u001b[0;0H"); // Clear screen
+      console.log("\\u001b[1m\\u001b[36m${title}\\u001b[0m\\n");
+      
+      menuItems.forEach((item, index) => {
+        const prefix = index === selectedIndex ? "> " : "  ";
+        console.log(prefix + applyStyle(item, index === selectedIndex));
+      });
+      
+      console.log("\\n\\u001b[90m(위/아래 화살표로 이동, Enter로 선택)\\u001b[0m");
+    }
+    
+    // 최초 렌더링
+    renderMenu();
+    
+    // 키 이벤트 리스너
+    return new Promise(resolve => {
+      const disposable = terminal.onKey(e => {
+        const ev = e.domEvent;
+        
+        switch(ev.key) {
+          case "ArrowUp":
+            selectedIndex = (selectedIndex > 0) ? selectedIndex - 1 : menuItems.length - 1;
+            renderMenu();
+            break;
+          case "ArrowDown":
+            selectedIndex = (selectedIndex < menuItems.length - 1) ? selectedIndex + 1 : 0;
+            renderMenu();
+            break;
+          case "Enter":
+            running = false;
+            disposable.dispose();
+            console.log("\\n\\u001b[32m선택: " + menuItems[selectedIndex] + "\\u001b[0m\\n");
+            resolve(selectedIndex + 1); // 1부터 시작하는 인덱스 반환
+            break;
+        }
+      });
+    });
+  })()
+  `;
+  
+  return [code, Blockly.JavaScript.ORDER_AWAIT];
+};
+
+/**
+ * 진행 표시줄(인터랙티브) 블록 정의
+ */
+Blockly.Blocks['interaction_progress_bar_interactive'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("인터랙티브 진행 표시줄")
+        .appendField(new Blockly.FieldTextInput("진행 중..."), "MESSAGE");
+    this.appendValueInput("TOTAL")
+        .setCheck("Number")
+        .appendField("전체 단계");
+    this.appendDummyInput()
+        .appendField("너비")
+        .appendField(new Blockly.FieldNumber(20, 5, 100), "WIDTH")
+        .appendField("취소키")
+        .appendField(new Blockly.FieldDropdown([
+          ["ESC", "Escape"],
+          ["Q", "q"],
+          ["X", "x"],
+          ["없음", "none"]
+        ]), "CANCEL_KEY");
+    this.setOutput(true, "Boolean");
+    this.setColour(INTERACTION_BLOCK_COLOR);
+    this.setTooltip("취소 가능한 진행 표시줄을 표시합니다. 완료되면 true, 취소되면 false를 반환합니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_progress_bar_interactive'] = function(block) {
+  const message = block.getFieldValue('MESSAGE');
+  const width = block.getFieldValue('WIDTH');
+  const cancelKey = block.getFieldValue('CANCEL_KEY');
+  const total = Blockly.JavaScript.valueToCode(block, 'TOTAL', Blockly.JavaScript.ORDER_ATOMIC) || '100';
+  
+  let cancelKeyCode = '';
+  if (cancelKey !== 'none') {
+    cancelKeyCode = `
+      if (key === "${cancelKey}") {
+        clearInterval(interval);
+        disposable.dispose();
+        process.stdout.write("\\r\\u001b[K\\u001b[31m취소됨!\\u001b[0m\\n");
+        resolve(false);
+      }
+    `;
+  }
+  
+  const code = `
+  (async function() {
+    const totalSteps = ${total};
+    const barWidth = ${width};
+    let currentStep = 0;
+    let cancelled = false;
+    
+    // 취소 키 이벤트 리스너
+    const disposable = terminal.onKey(e => {
+      const key = e.domEvent.key;
+      ${cancelKeyCode}
+    });
+    
+    // 진행 표시줄 렌더링 함수
+    function renderProgressBar() {
+      const percent = Math.floor((currentStep / totalSteps) * 100);
+      const filledWidth = Math.floor((currentStep / totalSteps) * barWidth);
+      
+      let bar = '[';
+      bar += '='.repeat(filledWidth);
+      if (filledWidth < barWidth) {
+        bar += '>';
+        bar += ' '.repeat(barWidth - filledWidth - 1);
+      }
+      bar += '] ' + percent + '% ${message}';
+      
+      if (cancelKey !== 'none') {
+        bar += ' (${cancelKey} 키로 취소)';
+      }
+      
+      process.stdout.write("\\r\\u001b[K" + bar);
+    }
+    
+    return new Promise(resolve => {
+      // 진행 업데이트 타이머
+      const interval = setInterval(() => {
+        currentStep++;
+        renderProgressBar();
+        
+        if (currentStep >= totalSteps) {
+          clearInterval(interval);
+          disposable.dispose();
+          process.stdout.write("\\r\\u001b[K\\u001b[32m완료!\\u001b[0m\\n");
+          resolve(true);
+        }
+      }, 100);
+      
+      // 초기 렌더링
+      renderProgressBar();
+    });
+  })()
+  `;
+  
+  return [code, Blockly.JavaScript.ORDER_AWAIT];
+};
+
+/**
+ * 폼 입력 블록 정의
+ */
+Blockly.Blocks['interaction_form_input'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("입력 폼")
+        .appendField(new Blockly.FieldTextInput("사용자 정보 입력"), "TITLE");
+    this.appendDummyInput()
+        .appendField("필드들 (필드이름:레이블, 형식으로 구분)")
+        .appendField(new Blockly.FieldTextInput("name:이름,email:이메일,age:나이"), "FIELDS");
+    this.setOutput(true, null);
+    this.setColour(FORM_BLOCK_COLOR);
+    this.setTooltip("여러 필드를 가진 입력 폼을 표시하고 사용자 입력을 객체로 반환합니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_form_input'] = function(block) {
+  const title = block.getFieldValue('TITLE');
+  const fieldsString = block.getFieldValue('FIELDS');
+  
+  const code = `
+  (async function() {
+    const fieldsData = "${fieldsString}".split(',').map(field => {
+      const [id, label] = field.split(':');
+      return { id: id.trim(), label: label.trim() };
+    });
+    
+    console.log("\\u001b[1m\\u001b[36m${title}\\u001b[0m\\n");
+    
+    const result = {};
+    
+    for (const field of fieldsData) {
+      const value = await prompt(\`\${field.label}: \`);
+      result[field.id] = value;
+    }
+    
+    console.log("\\u001b[32m입력 완료!\\u001b[0m\\n");
+    return result;
+  })()
+  `;
+  
+  return [code, Blockly.JavaScript.ORDER_AWAIT];
+};
+
+/**
+ * 방향키 컨트롤 블록 정의
+ */
+Blockly.Blocks['interaction_arrow_control'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("방향키 컨트롤");
+    this.appendStatementInput("UP")
+        .setCheck(null)
+        .appendField("위쪽");
+    this.appendStatementInput("DOWN")
+        .setCheck(null)
+        .appendField("아래쪽");
+    this.appendStatementInput("LEFT")
+        .setCheck(null)
+        .appendField("왼쪽");
+    this.appendStatementInput("RIGHT")
+        .setCheck(null)
+        .appendField("오른쪽");
+    this.appendDummyInput()
+        .appendField("종료 키")
+        .appendField(new Blockly.FieldDropdown([
+          ["ESC", "Escape"],
+          ["Q", "q"],
+          ["Enter", "Enter"],
+          ["스페이스바", " "]
+        ]), "EXIT_KEY");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(GAME_INTERACTION_BLOCK_COLOR);
+    this.setTooltip("방향키 입력을 감지하고 지정된 코드를 실행합니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_arrow_control'] = function(block) {
+  const upCode = Blockly.JavaScript.statementToCode(block, 'UP');
+  const downCode = Blockly.JavaScript.statementToCode(block, 'DOWN');
+  const leftCode = Blockly.JavaScript.statementToCode(block, 'LEFT');
+  const rightCode = Blockly.JavaScript.statementToCode(block, 'RIGHT');
+  const exitKey = block.getFieldValue('EXIT_KEY');
+  
+  const code = `
+  await (async function() {
+    console.log("\\u001b[33m방향키를 사용하여 조작하세요. ${exitKey}키로 종료합니다.\\u001b[0m");
+    
+    return new Promise(resolve => {
+      const disposable = terminal.onKey(e => {
+        const key = e.domEvent.key;
+        
+        switch(key) {
+          case "ArrowUp":
+            ${upCode}
+            break;
+          case "ArrowDown":
+            ${downCode}
+            break;
+          case "ArrowLeft":
+            ${leftCode}
+            break;
+          case "ArrowRight":
+            ${rightCode}
+            break;
+          case "${exitKey}":
+            disposable.dispose();
+            console.log("\\u001b[32m방향키 컨트롤이 종료되었습니다.\\u001b[0m");
+            resolve();
+            break;
+        }
+      });
+    });
+  })();
+  `;
+  
+  return code;
+};
+
+/**
+ * 자동완성 입력 블록 정의
+ */
+Blockly.Blocks['interaction_autocomplete'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("자동완성 입력")
+        .appendField(new Blockly.FieldTextInput("입력하세요:"), "PROMPT");
+    this.appendDummyInput()
+        .appendField("가능한 값 (쉼표로 구분)")
+        .appendField(new Blockly.FieldTextInput("apple,banana,cherry,date,elderberry"), "OPTIONS");
+    this.setOutput(true, "String");
+    this.setColour(INTERACTION_BLOCK_COLOR);
+    this.setTooltip("자동완성 기능이 있는 입력 필드를 표시합니다. Tab키로 자동완성할 수 있습니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_autocomplete'] = function(block) {
+  const prompt = block.getFieldValue('PROMPT');
+  const optionsString = block.getFieldValue('OPTIONS');
+  
+  const code = `
+  (async function() {
+    const options = "${optionsString}".split(',').map(opt => opt.trim());
+    console.log("\\u001b[36m${prompt}\\u001b[0m");
+    console.log("\\u001b[90m(Tab키로 자동완성, Enter키로 제출)\\u001b[0m");
+    
+    let input = "";
+    let currentSuggestions = [];
+    let suggestionIndex = 0;
+    let cursorPos = 0;
+    
+    // 자동완성 제안 찾기
+    function findSuggestions(text) {
+      if (!text) return [];
+      return options.filter(opt => opt.toLowerCase().startsWith(text.toLowerCase()));
+    }
+    
+    // 입력 렌더링
+    function renderInput() {
+      process.stdout.write("\\r\\u001b[K> " + input);
+      
+      // 커서 위치로 이동
+      if (cursorPos < input.length) {
+        process.stdout.write(\`\\u001b[\${input.length - cursorPos}D\`);
+      }
+    }
+    
+    // 제안 렌더링
+    function renderSuggestions() {
+      if (currentSuggestions.length === 0) return;
+      
+      process.stdout.write("\\n\\r\\u001b[K\\u001b[90m제안: ");
+      currentSuggestions.forEach((sugg, idx) => {
+        if (idx === suggestionIndex) {
+          process.stdout.write(\`\\u001b[7m\${sugg}\\u001b[27m \`);
+        } else {
+          process.stdout.write(sugg + " ");
+        }
+      });
+      process.stdout.write("\\u001b[0m");
+      
+      // 커서를 원래 위치로 이동
+      process.stdout.write(\`\\u001b[1A\\r\\u001b[K> \${input}\`);
+      if (cursorPos < input.length) {
+        process.stdout.write(\`\\u001b[\${input.length - cursorPos}D\`);
+      }
+    }
+    
+    return new Promise(resolve => {
+      const disposable = terminal.onKey(e => {
+        const ev = e.domEvent;
+        const key = ev.key;
+        
+        if (key === "Enter") {
+          disposable.dispose();
+          process.stdout.write("\\n");
+          if (currentSuggestions.length > 0) {
+            process.stdout.write("\\u001b[1A\\u001b[K"); // 제안 라인 지우기
+          }
+          console.log("\\u001b[32m입력 완료: " + input + "\\u001b[0m");
+          resolve(input);
+        }
+        else if (key === "Tab") {
+          ev.preventDefault();
+          if (currentSuggestions.length > 0) {
+            input = currentSuggestions[suggestionIndex];
+            cursorPos = input.length;
+            suggestionIndex = (suggestionIndex + 1) % currentSuggestions.length;
+            currentSuggestions = findSuggestions(input);
+            renderInput();
+            renderSuggestions();
+          }
+        }
+        else if (key === "Backspace") {
+          if (cursorPos > 0) {
+            input = input.substring(0, cursorPos - 1) + input.substring(cursorPos);
+            cursorPos--;
+            currentSuggestions = findSuggestions(input);
+            suggestionIndex = 0;
+            renderInput();
+            renderSuggestions();
+          }
+        }
+        else if (key === "ArrowLeft") {
+          if (cursorPos > 0) {
+            cursorPos--;
+            renderInput();
+          }
+        }
+        else if (key === "ArrowRight") {
+          if (cursorPos < input.length) {
+            cursorPos++;
+            renderInput();
+          }
+        }
+        else if (key.length === 1) {
+          input = input.substring(0, cursorPos) + key + input.substring(cursorPos);
+          cursorPos++;
+          currentSuggestions = findSuggestions(input);
+          suggestionIndex = 0;
+          renderInput();
+          renderSuggestions();
+        }
+      });
+      
+      renderInput();
+    });
+  })()
+  `;
+  
+  return [code, Blockly.JavaScript.ORDER_AWAIT];
+};
+
+/**
+ * 툴팁 표시 블록 정의
+ */
+Blockly.Blocks['interaction_tooltip'] = {
+  init: function() {
+    this.appendValueInput("TEXT")
+        .setCheck("String")
+        .appendField("텍스트");
+    this.appendValueInput("TOOLTIP")
+        .setCheck("String")
+        .appendField("툴팁");
+    this.appendDummyInput()
+        .appendField("표시 시간")
+        .appendField(new Blockly.FieldNumber(3, 1, 10), "DURATION")
+        .appendField("초");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(INTERACTION_BLOCK_COLOR);
+    this.setTooltip("텍스트를 출력하고 특정 시간 동안 툴팁을 표시합니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_tooltip'] = function(block) {
+  const text = Blockly.JavaScript.valueToCode(block, 'TEXT', Blockly.JavaScript.ORDER_ATOMIC) || '""';
+  const tooltip = Blockly.JavaScript.valueToCode(block, 'TOOLTIP', Blockly.JavaScript.ORDER_ATOMIC) || '""';
+  const duration = block.getFieldValue('DURATION');
+  
+  const code = `
+  (async function() {
+    const mainText = ${text};
+    const tooltipText = ${tooltip};
+    
+    // 메인 텍스트 출력
+    process.stdout.write(mainText);
+    
+    // 툴팁 표시
+    process.stdout.write(" \\u001b[33m[?]\\u001b[0m");
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // 툴팁 박스 그리기
+    const lines = tooltipText.split('\\n');
+    const width = Math.max(...lines.map(line => line.length)) + 4;
+    
+    process.stdout.write("\\n\\r\\u001b[36m┌" + "─".repeat(width - 2) + "┐\\u001b[0m\\n");
+    
+    for (const line of lines) {
+      process.stdout.write("\\u001b[36m│ \\u001b[33m" + line + " ".repeat(width - line.length - 3) + "\\u001b[36m│\\u001b[0m\\n");
+    }
+    
+    process.stdout.write("\\u001b[36m└" + "─".repeat(width - 2) + "┘\\u001b[0m");
+    
+    // 툴팁 시간 경과후 제거
+    await new Promise(resolve => setTimeout(resolve, ${duration} * 1000));
+    
+    // 툴팁 제거 (커서를 위로 이동시켜 툴팁 라인 덮어쓰기)
+    const moveUp = lines.length + 2; // 테두리 포함
+    process.stdout.write(\`\\u001b[\${moveUp}A\\r\\u001b[K\`);
+    
+    // 메인 텍스트 다시 출력
+    process.stdout.write(mainText + "\\n");
+  })();
+  `;
+  
+  return code;
+};
+
+/**
+ * 게임 조이스틱 블록 정의
+ */
+Blockly.Blocks['interaction_joystick'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("조이스틱 모드")
+        .appendField("속도")
+        .appendField(new Blockly.FieldNumber(1, 1, 10), "SPEED");
+    this.appendDummyInput()
+        .appendField("x 변수")
+        .appendField(new Blockly.FieldVariable("x"), "X_VAR")
+        .appendField("y 변수")
+        .appendField(new Blockly.FieldVariable("y"), "Y_VAR");
+    this.appendDummyInput()
+        .appendField("종료 키")
+        .appendField(new Blockly.FieldDropdown([
+          ["ESC", "Escape"],
+          ["Q", "q"],
+          ["X", "x"]
+        ]), "EXIT_KEY");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(GAME_INTERACTION_BLOCK_COLOR);
+    this.setTooltip("방향키로 x, y 좌표를 업데이트하는 조이스틱 모드를 시작합니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_joystick'] = function(block) {
+  const speed = block.getFieldValue('SPEED');
+  const xVar = Blockly.JavaScript.variableDB_.getName(
+      block.getFieldValue('X_VAR'), Blockly.Variables.NAME_TYPE);
+  const yVar = Blockly.JavaScript.variableDB_.getName(
+      block.getFieldValue('Y_VAR'), Blockly.Variables.NAME_TYPE);
+  const exitKey = block.getFieldValue('EXIT_KEY');
+  
+  const code = `
+  await (async function() {
+    console.log("\\u001b[33m조이스틱 모드가 활성화되었습니다. 방향키로 이동, ${exitKey}로 종료합니다.\\u001b[0m");
+    
+    // 초기 좌표 설정
+    ${xVar} = 0;
+    ${yVar} = 0;
+    
+    // 조이스틱 상태 출력
+    function updateStatus() {
+      process.stdout.write(\`\\r\\u001b[KX: \${${xVar}}, Y: \${${yVar}}\`);
+    }
+    
+    // 초기 상태 출력
+    updateStatus();
+    
+    return new Promise(resolve => {
+      const disposable = terminal.onKey(e => {
+        const key = e.domEvent.key;
+        
+        switch(key) {
+          case "ArrowUp":
+            ${yVar} -= ${speed};
+            updateStatus();
+            break;
+          case "ArrowDown":
+            ${yVar} += ${speed};
+            updateStatus();
+            break;
+          case "ArrowLeft":
+            ${xVar} -= ${speed};
+            updateStatus();
+            break;
+          case "ArrowRight":
+            ${xVar} += ${speed};
+            updateStatus();
+            break;
+          case "${exitKey}":
+            disposable.dispose();
+            console.log("\\n\\u001b[32m조이스틱 모드가 종료되었습니다.\\u001b[0m");
+            resolve();
+            break;
+        }
+      });
+    });
+  })();
+  `;
+  
+  return code;
+};
+
+/**
+ * 명령어 이력 관리 블록 정의
+ */
+Blockly.Blocks['interaction_command_history'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("명령어 입력")
+        .appendField(new Blockly.FieldTextInput("명령어:"), "PROMPT");
+    this.appendDummyInput()
+        .appendField("이전 이력 변수")
+        .appendField(new Blockly.FieldVariable("commandHistory"), "HISTORY_VAR");
+    this.setOutput(true, "String");
+    this.setColour(INTERACTION_BLOCK_COLOR);
+    this.setTooltip("명령어를 입력받고 이력을 관리합니다. 위/아래 화살표 키로 이전 명령어를 탐색할 수 있습니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_command_history'] = function(block) {
+  const prompt = block.getFieldValue('PROMPT');
+  const historyVar = Blockly.JavaScript.variableDB_.getName(
+      block.getFieldValue('HISTORY_VAR'), Blockly.Variables.NAME_TYPE);
+  
+  const code = `
+  (async function() {
+    // 이력 변수가 없으면 초기화
+    if (typeof ${historyVar} === 'undefined') {
+      ${historyVar} = [];
+    }
+    
+    let inputBuffer = "";
+    let historyIndex = ${historyVar}.length;
+    let cursorPos = 0;
+    
+    // 프롬프트 출력
+    process.stdout.write("\\u001b[36m${prompt} \\u001b[0m");
+    
+    // 입력 내용 렌더링
+    function renderInput() {
+      process.stdout.write("\\r\\u001b[K\\u001b[36m${prompt} \\u001b[0m" + inputBuffer);
+      
+      // 커서 위치로 이동
+      if (cursorPos < inputBuffer.length) {
+        process.stdout.write(\`\\u001b[\${inputBuffer.length - cursorPos}D\`);
+      }
+    }
+    
+    return new Promise(resolve => {
+      const disposable = terminal.onKey(e => {
+        const ev = e.domEvent;
+        const key = ev.key;
+        
+        if (key === "Enter") {
+          disposable.dispose();
+          process.stdout.write("\\n");
+          
+          // 빈 문자열이 아니면 명령어 이력에 추가
+          if (inputBuffer.trim() !== "") {
+            ${historyVar}.push(inputBuffer);
+          }
+          
+          resolve(inputBuffer);
+        }
+        else if (key === "ArrowUp") {
+          if (historyIndex > 0) {
+            historyIndex--;
+            inputBuffer = ${historyVar}[historyIndex];
+            cursorPos = inputBuffer.length;
+            renderInput();
+          }
+        }
+        else if (key === "ArrowDown") {
+          if (historyIndex < ${historyVar}.length) {
+            historyIndex++;
+            if (historyIndex === ${historyVar}.length) {
+              inputBuffer = "";
+            } else {
+              inputBuffer = ${historyVar}[historyIndex];
+            }
+            cursorPos = inputBuffer.length;
+            renderInput();
+          }
+        }
+        else if (key === "Backspace") {
+          if (cursorPos > 0) {
+            inputBuffer = inputBuffer.substring(0, cursorPos - 1) + inputBuffer.substring(cursorPos);
+            cursorPos--;
+            renderInput();
+          }
+        }
+        else if (key === "ArrowLeft") {
+          if (cursorPos > 0) {
+            cursorPos--;
+            renderInput();
+          }
+        }
+        else if (key === "ArrowRight") {
+          if (cursorPos < inputBuffer.length) {
+            cursorPos++;
+            renderInput();
+          }
+        }
+        else if (key.length === 1) {
+          inputBuffer = inputBuffer.substring(0, cursorPos) + key + inputBuffer.substring(cursorPos);
+          cursorPos++;
+          renderInput();
+        }
+      });
+    });
+  })()
+  `;
+  
+  return [code, Blockly.JavaScript.ORDER_AWAIT];
+};
+
+/**
+ * 게임 핸들러 블록 정의
+ */
+Blockly.Blocks['interaction_game_handler'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("게임 핸들러")
+        .appendField("프레임 속도")
+        .appendField(new Blockly.FieldNumber(10, 1, 60), "FPS");
+    this.appendStatementInput("SETUP")
+        .setCheck(null)
+        .appendField("초기 설정");
+    this.appendStatementInput("LOOP")
+        .setCheck(null)
+        .appendField("반복 실행");
+    this.appendStatementInput("KEYPRESS")
+        .setCheck(null)
+        .appendField("키 입력 시");
+    this.appendDummyInput()
+        .appendField("키 변수")
+        .appendField(new Blockly.FieldVariable("key"), "KEY_VAR");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(GAME_INTERACTION_BLOCK_COLOR);
+    this.setTooltip("게임 루프를 설정합니다. 지정된 속도로 반복 실행하고 키 입력을 처리합니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_game_handler'] = function(block) {
+  const fps = block.getFieldValue('FPS');
+  const setupCode = Blockly.JavaScript.statementToCode(block, 'SETUP');
+  const loopCode = Blockly.JavaScript.statementToCode(block, 'LOOP');
+  const keypressCode = Blockly.JavaScript.statementToCode(block, 'KEYPRESS');
+  const keyVar = Blockly.JavaScript.variableDB_.getName(
+      block.getFieldValue('KEY_VAR'), Blockly.Variables.NAME_TYPE);
+  
+  const code = `
+  await (async function() {
+    // 화면 지우기
+    console.log("\\u001b[2J\\u001b[0;0H");
+    console.log("\\u001b[33m게임이 시작되었습니다. ESC 키를 눌러 종료합니다.\\u001b[0m\\n");
+    
+    // 게임 변수 초기화
+    let isGameRunning = true;
+    let frameInterval = 1000 / ${fps};
+    
+    // 초기 설정 실행
+    ${setupCode}
+    
+    // 키 입력 리스너
+    const keyDisposable = terminal.onKey(e => {
+      const ${keyVar} = e.domEvent.key;
+      
+      // ESC 키로 게임 종료
+      if (${keyVar} === "Escape") {
+        isGameRunning = false;
+        return;
+      }
+      
+      // 키 입력 처리
+      ${keypressCode}
+    });
+    
+    // 게임 루프
+    while (isGameRunning) {
+      const startTime = Date.now();
+      
+      // 게임 로직 실행
+      ${loopCode}
+      
+      // 프레임 레이트 맞추기
+      const elapsedTime = Date.now() - startTime;
+      const sleepTime = Math.max(0, frameInterval - elapsedTime);
+      await new Promise(resolve => setTimeout(resolve, sleepTime));
+    }
+    
+    // 게임 종료 정리
+    keyDisposable.dispose();
+    console.log("\\n\\u001b[32m게임이 종료되었습니다.\\u001b[0m");
+  })();
+  `;
+  
+  return code;
+};
+
+/**
+ * 색상 선택기 블록 정의
+ */
+Blockly.Blocks['interaction_color_picker'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("색상 선택기")
+        .appendField(new Blockly.FieldTextInput("색상을 선택하세요:"), "PROMPT");
+    this.setOutput(true, "String");
+    this.setColour(INTERACTION_BLOCK_COLOR);
+    this.setTooltip("대화형 색상 선택기를 표시하고 선택된 색상 코드를 반환합니다.");
+    this.setHelpUrl("");
+  }
+};
+
+Blockly.JavaScript['interaction_color_picker'] = function(block) {
+  const prompt = block.getFieldValue('PROMPT');
+  
+  const code = `
+  (async function() {
+    const colors = [
+      { name: "검정색", code: "\\u001b[30m", hex: "#000000" },
+      { name: "빨간색", code: "\\u001b[31m", hex: "#FF0000" },
+      { name: "초록색", code: "\\u001b[32m", hex: "#00FF00" },
+      { name: "노란색", code: "\\u001b[33m", hex: "#FFFF00" },
+      { name: "파란색", code: "\\u001b[34m", hex: "#0000FF" },
+      { name: "마젠타", code: "\\u001b[35m", hex: "#FF00FF" },
+      { name: "시안", code: "\\u001b[36m", hex: "#00FFFF" },
+      { name: "흰색", code: "\\u001b[37m", hex: "#FFFFFF" },
+      { name: "밝은 검정색", code: "\\u001b[90m", hex: "#555555" },
+      { name: "밝은 빨간색", code: "\\u001b[91m", hex: "#FF5555" },
+      { name: "밝은 초록색", code: "\\u001b[92m", hex: "#55FF55" },
+      { name: "밝은 노란색", code: "\\u001b[93m", hex: "#FFFF55" },
+      { name: "밝은 파란색", code: "\\u001b[94m", hex: "#5555FF" },
+      { name: "밝은 마젠타", code: "\\u001b[95m", hex: "#FF55FF" },
+      { name: "밝은 시안", code: "\\u001b[96m", hex: "#55FFFF" },
+      { name: "밝은 흰색", code: "\\u001b[97m", hex: "#FFFFFF" }
+    ];
+    
+    let selectedIndex = 0;
+    
+    // 색상 선택기 렌더링
+    function renderColorPicker() {
+      // 화면 지우기
+      console.log("\\u001b[2J\\u001b[0;0H");
+      console.log("\\u001b[1m${prompt}\\u001b[0m\\n");
+      
+      // 색상 팔레트 그리기
+      let colorsPerRow = 4;
+      for (let i = 0; i < colors.length; i += colorsPerRow) {
+        let row = "";
+        for (let j = 0; j < colorsPerRow && i + j < colors.length; j++) {
+          const colorIndex = i + j;
+          const color = colors[colorIndex];
+          const selected = colorIndex === selectedIndex;
+          
+          if (selected) {
+            row += \`\\u001b[7m\${color.code}██ \${color.name}\\u001b[0m\\u001b[7m (\${color.hex})\\u001b[0m   \`;
+          } else {
+            row += \`\${color.code}██\\u001b[0m \${color.name} (\${color.hex})   \`;
+          }
+        }
+        console.log(row);
+      }
+      
+      console.log("\\n\\u001b[90m방향키로 이동, Enter로 선택, ESC로 취소\\u001b[0m");
+    }
+    
+    // 초기 렌더링
+    renderColorPicker();
+    
+    return new Promise(resolve => {
+      const disposable = terminal.onKey(e => {
+        const key = e.domEvent.key;
+        
+        switch(key) {
+          case "ArrowUp":
+            if (selectedIndex >= 4) {
+              selectedIndex -= 4;
+              renderColorPicker();
+            }
+            break;
+          case "ArrowDown":
+            if (selectedIndex < colors.length - 4) {
+              selectedIndex += 4;
+              renderColorPicker();
+            }
+            break;
+          case "ArrowLeft":
+            if (selectedIndex > 0) {
+              selectedIndex--;
+              renderColorPicker();
+            }
+            break;
+          case "ArrowRight":
+            if (selectedIndex < colors.length - 1) {
+              selectedIndex++;
+              renderColorPicker();
+            }
+            break;
+          case "Enter":
+            disposable.dispose();
+            const selectedColor = colors[selectedIndex];
+            console.log(\`\\n\\u001b[32m선택된 색상: \${selectedColor.code}██\\u001b[0m \${selectedColor.name} (\${selectedColor.hex})\\n\`);
+            resolve(selectedColor.hex);
+            break;
+          case "Escape":
+            disposable.dispose();
+            console.log("\\n\\u001b[33m색상 선택이 취소되었습니다.\\u001b[0m\\n");
+            resolve(null);
+            break;
+        }
+      });
+    });
+  })()
+  `;
+  
+  return [code, Blockly.JavaScript.ORDER_AWAIT];
+};
+
+/**
+ * 터미널 상호작용 카테고리 등록을 위한 함수
+ */
+function registerInteractionBlocks() {
+  // 도구상자에 카테고리 추가
+  function addInteractionCategory(workspace) {
+    const toolbox = workspace.getToolbox();
+    if (toolbox) {
+      const toolboxDef = toolbox.getToolboxDef();
+      
+      // 상호작용 카테고리
+      const interactionCategory = {
+        kind: 'category',
+        name: '상호작용',
+        colour: INTERACTION_BLOCK_COLOR,
+        contents: [
+          { kind: 'block', type: 'interaction_text_input' },
+          { kind: 'block', type: 'interaction_number_input' },
+          { kind: 'block', type: 'interaction_confirm' },
+          { kind: 'block', type: 'interaction_select' },
+          { kind: 'block', type: 'interaction_password' },
+          { kind: 'block', type: 'interaction_tooltip' },
+          { kind: 'block', type: 'interaction_autocomplete' },
+          { kind: 'block', type: 'interaction_progress_bar_interactive' },
+          { kind: 'block', type: 'interaction_command_history' },
+          { kind: 'block', type: 'interaction_color_picker' }
+        ]
+      };
+      
+      // 키보드 제어 카테고리
+      const keyboardCategory = {
+        kind: 'category',
+        name: '키보드 제어',
+        colour: KEYBOARD_BLOCK_COLOR,
+        contents: [
+          { kind: 'block', type: 'interaction_wait_key' },
+          { kind: 'block', type: 'interaction_wait_specific_key' },
+          { kind: 'block', type: 'interaction_on_key' }
+        ]
+      };
+      
+      // 메뉴 및 폼 카테고리
+      const menuCategory = {
+        kind: 'category',
+        name: '메뉴 및 폼',
+        colour: MENU_BLOCK_COLOR,
+        contents: [
+          { kind: 'block', type: 'interaction_show_menu' },
+          { kind: 'block', type: 'interaction_form_input' }
+        ]
+      };
+      
+      // 게임 상호작용 카테고리
+      const gameInteractionCategory = {
+        kind: 'category',
+        name: '게임 상호작용',
+        colour: GAME_INTERACTION_BLOCK_COLOR,
+        contents: [
+          { kind: 'block', type: 'interaction_arrow_control' },
+          { kind: 'block', type: 'interaction_joystick' },
+          { kind: 'block', type: 'interaction_game_handler' }
+        ]
+      };
+      
+      // 새 카테고리 추가
+      const newToolboxDef = {
+        ...toolboxDef,
+        contents: [
+          ...toolboxDef.contents,
+          // 기존 카테고리와 새 카테고리 사이에 구분선 추가
+          { kind: 'sep' },
+          // 새 상호작용 관련 카테고리들 추가
+          interactionCategory,
+          keyboardCategory,
+          menuCategory,
+          gameInteractionCategory
+        ]
+      };
+      
+      // 도구상자 새로고침
+      workspace.updateToolbox(newToolboxDef);
+    }
+  }
+  
+  // Blockly 워크스페이스가 초기화된 후 카테고리 추가
+  if (window.workspace) {
+    addInteractionCategory(window.workspace);
+  } else {
+    // Blockly가 로드된 후 실행
+    document.addEventListener('blocklyLoaded', function() {
+      if (window.workspace) {
+        addInteractionCategory(window.workspace);
+      }
+    });
+  }
+}
+
+// 페이지 로드 시 블록 등록
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', registerInteractionBlocks);
+}
