@@ -1,11 +1,10 @@
 /* ─────────────────────────────────────────────────────────
  *  C‑Terminal Playground  —  Full Version
  *      · process 폴리필
- *      · CustomRenderer(둥근 모서리 + 4 px 테두리)
+ *      · CustomRenderer(둥근 모서리 + 4px 테두리)
  *      · ConstantProvider 오버라이드
- *      · Full Toolbox JSON
+ *      · 원본 app.js 전체 툴박스 JSON
  *      · 실행 / 저장 / 불러오기 / 공유 / 리사이즈
- *      · ★ 모든 브라우저 I/O를 XTerm 터미널 내부로 리다이렉트
  * ───────────────────────────────────────────────────────── */
 
 let workspace;
@@ -24,59 +23,7 @@ const STORAGE_KEY = 'c‑terminal‑playground‑project';
   };
 })();
 
-/* === 0‑2) 터미널 I/O 리다이렉션 ========================================= */
-function setupTerminalIO () {
-  // 1) console 계열
-  const writeLn = (...args) => terminal.writeln(args.join(' '));
-  console.log    = writeLn;
-  console.info   = writeLn;
-  console.warn   = (...a) => terminal.writeln('\u001b[33m[Warn]\u001b[0m '  + a.join(' '));
-  console.error  = (...a) => terminal.writeln('\u001b[31m[Error]\u001b[0m ' + a.join(' '));
-
-  // 2) alert → 단순 출력
-  globalThis.alert = msg => terminal.writeln(String(msg));
-
-  // 3) 프롬프트 입력 util
-  async function terminalPrompt (message = '') {
-    return new Promise(resolve => {
-      let buffer = '';
-      terminal.write(`${message} `);
-
-      const onData = data => {
-        const code = data.charCodeAt(0);
-        // Enter
-        if (code === 13) {
-          terminal.writeln('');
-          terminal.offData(onData);
-          resolve(buffer);
-          return;
-        }
-        // backspace
-        if (code === 127 || code === 8) {
-          if (buffer.length) {
-            buffer = buffer.slice(0, -1);
-            terminal.write('\b \b');
-          }
-          return;
-        }
-        buffer += data;
-        terminal.write(data);
-      };
-
-      terminal.onData(onData);
-    });
-  }
-
-  // 4) prompt / confirm 대체
-  globalThis.prompt  = terminalPrompt;
-  globalThis.confirm = async msg => {
-    const ans = await terminalPrompt(`${msg} (y/n)`);
-    return ans.trim().toLowerCase().startsWith('y');
-  };
-}
-/* === 터미널 I/O 리다이렉션 끝 ========================================= */
-
-/* 1) ConstantProvider – 모서리/탭/노치 원본 값 -------------------------- */
+/* 1) ConstantProvider – 모서리/탭/노치 원본 값 */
 const CP = Blockly.blockRendering.ConstantProvider.prototype;
 CP.CORNER_RADIUS          = 25;
 CP.OUTSIDE_CORNER_RADIUS  = 25;
@@ -87,11 +34,11 @@ CP.NOTCH_HEIGHT           = 15;
 CP.TAB_HEIGHT             = 20;
 CP.TAB_RADIUS             = 20;
 
-/* 2) CustomRenderer – 4 px 테두리 -------------------------------------- */
+/* 2) CustomRenderer – 4 px 테두리 */
 const BORDER_WIDTH = 4;
 class CustomRenderer extends Blockly.blockRendering.Renderer {
   makePathObject (constants) {
-    const obj  = super.makePathObject(constants);
+    const obj = super.makePathObject(constants);
     const orig = obj.drawSolidHighlighted;
     obj.drawSolidHighlighted = function (pattern, colour) {
       orig.call(this, pattern, colour);
@@ -109,28 +56,28 @@ class CustomRenderer extends Blockly.blockRendering.Renderer {
 }
 Blockly.blockRendering.register('custom_renderer', CustomRenderer);
 
-/* 3) Custom Theme – 원본 색상 ------------------------------------------ */
+/* 3) Custom Theme – 원본 색상 */
 const customTheme = Blockly.Theme.defineTheme('simpleRounded', {
   base: Blockly.Themes.Classic,
   blockStyles: {
-    logic_blocks     : { colourPrimary:'#6b96c1' },
-    loop_blocks      : { colourPrimary:'#6bc16b' },
-    math_blocks      : { colourPrimary:'#5cd65c' },
-    text_blocks      : { colourPrimary:'#c16bc1' },
-    variable_blocks  : { colourPrimary:'#c18b6b' },
-    procedure_blocks : { colourPrimary:'#8b6bc1' },
-    terminal_blocks  : { colourPrimary:'#5a5a5a' },
-    styling_blocks   : { colourPrimary:'#ffad33' },
-    output_blocks    : { colourPrimary:'#33adff' },
-    animation_blocks : { colourPrimary:'#ff3377' },
-    chart_blocks     : { colourPrimary:'#33ddff' },
-    ui_blocks        : { colourPrimary:'#b333ff' },
-    list_blocks      : { colourPrimary:'#c18b6b' },
-    array_blocks     : { colourPrimary:'#c18b6b' },
-    string_blocks    : { colourPrimary:'#c16bc1' },
-    time_blocks      : { colourPrimary:'#6b96c1' },
-    game_blocks      : { colourPrimary:'#ff6b6b' },
-    algorithm_blocks : { colourPrimary:'#8d6e63' }
+    logic_blocks:     { colourPrimary:'#6b96c1' },
+    loop_blocks:      { colourPrimary:'#6bc16b' },
+    math_blocks:      { colourPrimary:'#5cd65c' },
+    text_blocks:      { colourPrimary:'#c16bc1' },
+    variable_blocks:  { colourPrimary:'#c18b6b' },
+    procedure_blocks: { colourPrimary:'#8b6bc1' },
+    terminal_blocks:  { colourPrimary:'#5a5a5a' },
+    styling_blocks:   { colourPrimary:'#ffad33' },
+    output_blocks:    { colourPrimary:'#33adff' },
+    animation_blocks: { colourPrimary:'#ff3377' },
+    chart_blocks:     { colourPrimary:'#33ddff' },
+    ui_blocks:        { colourPrimary:'#b333ff' },
+    list_blocks:      { colourPrimary:'#c18b6b' },
+    array_blocks:     { colourPrimary:'#c18b6b' },
+    string_blocks:    { colourPrimary:'#c16bc1' },
+    time_blocks:      { colourPrimary:'#6b96c1' },
+    game_blocks:      { colourPrimary:'#ff6b6b' },
+    algorithm_blocks: { colourPrimary:'#8d6e63' }
   },
   componentStyles: {
     workspaceBackgroundColour : '#f5f5f5',
@@ -145,11 +92,11 @@ const customTheme = Blockly.Theme.defineTheme('simpleRounded', {
   fontStyle: { family:'Arial, sans-serif', weight:'bold', size:11 }
 });
 
-/* 4) Full Toolbox JSON -------------------------------------------------- */
+/* 4) Full Toolbox JSON (원본 app.js 전체) */
 const toolbox = {
   kind: 'categoryToolbox',
   contents: [
-    /* ──────────────── 기본 카테고리 ──────────────── */
+    /* ─ 기본 카테고리 ─ */
     { kind:'category', name:'로직', colour:'#6b96c1', contents:[
       {kind:'block',type:'controls_if'},
       {kind:'block',type:'logic_compare'},
@@ -160,68 +107,147 @@ const toolbox = {
       {kind:'block',type:'logic_ternary'}
     ]},
     { kind:'category', name:'반복', colour:'#6bc16b', contents:[
-      {kind:'block',type:'controls_repeat_ext',inputs:{TIMES:{shadow:{type:'math_number',fields:{NUM:10}}}}},
+      {kind:'block',type:'controls_repeat_ext',
+        inputs:{TIMES:{shadow:{type:'math_number',fields:{NUM:10}}}}},
       {kind:'block',type:'controls_whileUntil'},
-      {kind:'block',type:'controls_for',inputs:{FROM:{shadow:{type:'math_number',fields:{NUM:1}}},
-                                               TO  :{shadow:{type:'math_number',fields:{NUM:10}}},
-                                               BY  :{shadow:{type:'math_number',fields:{NUM:1}}}}},
+      {kind:'block',type:'controls_for',
+        inputs:{
+          FROM:{shadow:{type:'math_number',fields:{NUM:1}}},
+          TO  :{shadow:{type:'math_number',fields:{NUM:10}}},
+          BY  :{shadow:{type:'math_number',fields:{NUM:1}}}
+        }},
       {kind:'block',type:'controls_forEach'},
       {kind:'block',type:'controls_flow_statements'}
     ]},
     { kind:'category', name:'수학', colour:'#5cd65c', contents:[
       {kind:'block',type:'math_number',fields:{NUM:0}},
-      {kind:'block',type:'math_arithmetic',inputs:{A:{shadow:{type:'math_number',fields:{NUM:1}}},
-                                                   B:{shadow:{type:'math_number',fields:{NUM:1}}}}},
-      {kind:'block',type:'math_single',inputs:{NUM:{shadow:{type:'math_number',fields:{NUM:9}}}}},
-      {kind:'block',type:'math_trig',inputs:{NUM:{shadow:{type:'math_number',fields:{NUM:45}}}}},
+      {kind:'block',type:'math_arithmetic'},
+      {kind:'block',type:'math_single'},
+      {kind:'block',type:'math_trig'},
       {kind:'block',type:'math_constant'},
-      {kind:'block',type:'math_number_property',inputs:{NUMBER_TO_CHECK:{shadow:{type:'math_number',fields:{NUM:0}}}}},
-      {kind:'block',type:'math_round',inputs:{NUM:{shadow:{type:'math_number',fields:{NUM:3.1}}}}},
-      {kind:'block',type:'math_on_list'},
-      {kind:'block',type:'math_modulo',inputs:{DIVIDEND:{shadow:{type:'math_number',fields:{NUM:64}}},
-                                               DIVISOR :{shadow:{type:'math_number',fields:{NUM:10}}}}},
-      {kind:'block',type:'math_constrain',inputs:{VALUE:{shadow:{type:'math_number',fields:{NUM:50}}},
-                                                  LOW  :{shadow:{type:'math_number',fields:{NUM:1}}},
-                                                  HIGH :{shadow:{type:'math_number',fields:{NUM:100}}}}},
-      {kind:'block',type:'math_random_int',inputs:{FROM:{shadow:{type:'math_number',fields:{NUM:1}}},
-                                                   TO  :{shadow:{type:'math_number',fields:{NUM:100}}}}},
+      {kind:'block',type:'math_number_property'},
+      {kind:'block',type:'math_round'},
+      {kind:'block',type:'math_modulo'},
+      {kind:'block',type:'math_constrain',
+        inputs:{
+          LOW :{shadow:{type:'math_number',fields:{NUM:1}}},
+          HIGH:{shadow:{type:'math_number',fields:{NUM:100}}}
+        }},
+      {kind:'block',type:'math_random_int',
+        inputs:{
+          FROM:{shadow:{type:'math_number',fields:{NUM:1}}},
+          TO  :{shadow:{type:'math_number',fields:{NUM:100}}}
+        }},
       {kind:'block',type:'math_random_float'}
     ]},
     { kind:'category', name:'텍스트', colour:'#c16bc1', contents:[
       {kind:'block',type:'text'},
       {kind:'block',type:'text_join'},
-      {kind:'block',type:'text_append',inputs:{TEXT:{shadow:{type:'text'}}}},
-      {kind:'block',type:'text_length',inputs:{VALUE:{shadow:{type:'text'}}}},
-      {kind:'block',type:'text_isEmpty',inputs:{VALUE:{shadow:{type:'text'}}}},
-      {kind:'block',type:'text_indexOf',inputs:{VALUE:{shadow:{type:'variables_get',fields:{VAR:'item'}}},
-                                                FIND :{shadow:{type:'text'}}}},
-      {kind:'block',type:'text_charAt',inputs:{VALUE:{shadow:{type:'text'}}}},
-      {kind:'block',type:'text_getSubstring',inputs:{STRING:{shadow:{type:'text'}}}},
-      {kind:'block',type:'text_changeCase',inputs:{TEXT:{shadow:{type:'text'}}}},
-      {kind:'block',type:'text_trim',inputs:{TEXT:{shadow:{type:'text'}}}},
-      {kind:'block',type:'text_print',inputs:{TEXT:{shadow:{type:'text'}}}},
-      {kind:'block',type:'text_prompt_ext',inputs:{TEXT:{shadow:{type:'text'}}}}
+      {kind:'block',type:'text_append'},
+      {kind:'block',type:'text_length'},
+      {kind:'block',type:'text_isEmpty'},
+      {kind:'block',type:'text_indexOf'},
+      {kind:'block',type:'text_charAt'},
+      {kind:'block',type:'text_getSubstring'},
+      {kind:'block',type:'text_changeCase'},
+      {kind:'block',type:'text_trim'},
+      {kind:'block',type:'text_print'}
     ]},
-    { kind:'category', name:'리스트', colour:'#c18b6b', contents:[
-      {kind:'block',type:'lists_create_with',extraState:{itemCount:3}},
-      {kind:'block',type:'lists_repeat',inputs:{NUM:{shadow:{type:'math_number',fields:{NUM:5}}}}},
+    { kind:'category', name:'목록', colour:'#c18b6b', contents:[
+      {kind:'block',type:'lists_create_with'},
+      {kind:'block',type:'lists_repeat',
+        inputs:{NUM:{shadow:{type:'math_number',fields:{NUM:5}}}}},
       {kind:'block',type:'lists_length'},
       {kind:'block',type:'lists_isEmpty'},
-      {kind:'block',type:'lists_indexOf',inputs:{VALUE:{shadow:{type:'variables_get',fields:{VAR:'list'}}}}},
-      {kind:'block',type:'lists_getIndex',inputs:{VALUE:{shadow:{type:'variables_get',fields:{VAR:'list'}}}}},
-      {kind:'block',type:'lists_setIndex',inputs:{LIST:{shadow:{type:'variables_get',fields:{VAR:'list'}}}}},
-      {kind:'block',type:'lists_getSublist',inputs:{LIST:{shadow:{type:'variables_get',fields:{VAR:'list'}}}}},
-      {kind:'block',type:'lists_split',inputs:{DELIM:{shadow:{type:'text',fields:{TEXT:','}}}}},
-      {kind:'block',type:'lists_sort'}
+      {kind:'block',type:'lists_indexOf'},
+      {kind:'block',type:'lists_getIndex'},
+      {kind:'block',type:'lists_setIndex'},
+      {kind:'block',type:'lists_split'}
+    ]},
+    { kind:'category', name:'색상', colour:'#a6745b', contents:[
+      {kind:'block',type:'colour_picker'},
+      {kind:'block',type:'colour_random'},
+      {kind:'block',type:'colour_rgb',
+        inputs:{
+          RED  :{shadow:{type:'math_number',fields:{NUM:255}}},
+          GREEN:{shadow:{type:'math_number',fields:{NUM:0}}},
+          BLUE :{shadow:{type:'math_number',fields:{NUM:0}}}
+        }},
+      {kind:'block',type:'colour_blend',
+        inputs:{
+          RATIO:{shadow:{type:'math_number',fields:{NUM:0.5}}}
+        }}
     ]},
     { kind:'sep' },
-    /* ───────────── 사용자 변수 / 함수 ───────────── */
-    { kind:'category', name:'변수', custom:'VARIABLE', colour:'#c18b6b' },
-    { kind:'category', name:'함수', custom:'PROCEDURE', colour:'#8b6bc1' }
+    { kind:'category', name:'변수', colour:'#c18b6b', custom:'VARIABLE' },
+    { kind:'category', name:'함수', colour:'#8b6bc1', custom:'PROCEDURE' },
+    /* ─ 커스텀 카테고리 ─ */
+    { kind:'sep' },
+    { kind:'category', name:'터미널', colour:'#5a5a5a', contents:[
+      {kind:'block',type:'terminal_print'},
+      {kind:'block',type:'terminal_print_inline'},
+      {kind:'block',type:'terminal_clear'},
+      {kind:'block',type:'terminal_input'},
+      {kind:'block',type:'terminal_cursor_position'},
+      {kind:'block',type:'terminal_wait'}
+    ]},
+    { kind:'category', name:'텍스트 스타일', colour:'#ffad33', contents:[
+      {kind:'block',type:'terminal_text_color'},
+      {kind:'block',type:'terminal_text_style'}
+    ]},
+    { kind:'category', name:'고급 출력', colour:'#33adff', contents:[
+      {kind:'block',type:'terminal_table'},
+      {kind:'block',type:'terminal_box'},
+      {kind:'block',type:'terminal_notification_box'},
+      {kind:'block',type:'terminal_code_highlight'}
+    ]},
+    { kind:'category', name:'애니메이션', colour:'#ff3377', contents:[
+      {kind:'block',type:'terminal_animated_text'},
+      {kind:'block',type:'terminal_spinner'},
+      {kind:'block',type:'terminal_progress_bar'},
+      {kind:'block',type:'terminal_ascii_art'}
+    ]},
+    { kind:'category', name:'차트/그래프', colour:'#33ddff', contents:[
+      {kind:'block',type:'terminal_histogram'},
+      {kind:'block',type:'terminal_ascii_graph'}
+    ]},
+    { kind:'category', name:'화면 제어', colour:'#b333ff', contents:[
+      {kind:'block',type:'terminal_clear_screen'},
+      {kind:'block',type:'terminal_split_screen'}
+    ]},
+    { kind:'category', name:'배열', colour:'#c18b6b', contents:[
+      {kind:'block',type:'array_create'},
+      {kind:'block',type:'array_get_item'},
+      {kind:'block',type:'array_set_item'},
+      {kind:'block',type:'array_length'},
+      {kind:'block',type:'array_push'},
+      {kind:'block',type:'array_remove_at'}
+    ]},
+    { kind:'category', name:'문자열', colour:'#c16bc1', contents:[
+      {kind:'block',type:'string_concat'},
+      {kind:'block',type:'string_substring'},
+      {kind:'block',type:'string_split'}
+    ]},
+    { kind:'category', name:'고급 수학', colour:'#5cd65c', contents:[
+      {kind:'block',type:'math_random_float_advanced'},
+      {kind:'block',type:'math_function'}
+    ]},
+    { kind:'category', name:'시간', colour:'#6b96c1', contents:[
+      {kind:'block',type:'time_current'},
+      {kind:'block',type:'terminal_wait'}
+    ]},
+    { kind:'category', name:'게임', colour:'#ff6b6b', contents:[
+      {kind:'block',type:'game_difficulty'},
+      {kind:'block',type:'game_score'}
+    ]},
+    { kind:'category', name:'알고리즘', colour:'#8d6e63', contents:[
+      {kind:'block',type:'algorithm_sort_array'},
+      {kind:'block',type:'algorithm_search_array'}
+    ]}
   ]
 };
 
-/* 5) 초기화 -------------------------------------------------------------- */
+/* 5) 초기화 */
 window.addEventListener('DOMContentLoaded', () => {
   initPlayground();
   loadProject();
@@ -241,11 +267,13 @@ function initPlayground () {
     grid      : { spacing:20, length:3, colour:'#ccc', snap:true }
   });
 
+  /* ────────────── ★ 수정: 전역 등록 & 블록리 로드 신호 ───────────── */
+  window.workspace = workspace;                    // custom_blocks.js에서 사용
+  document.dispatchEvent(new Event('blocklyLoaded'));// 추가 카테고리 정상 반영
+  /* ──────────────────────────────────────────────────────────────── */
+
   terminal = new Terminal({ theme:{ background:'#1e1e1e', foreground:'#f8f8f8' } });
   terminal.open(document.getElementById('terminal'));
-
-  /* ★ 브라우저 I/O -> 터미널로 리다이렉션 */
-  setupTerminalIO();
 
   document.getElementById('run-btn')  .addEventListener('click', runCode);
   document.getElementById('save-btn') .addEventListener('click', saveProject);
@@ -255,7 +283,7 @@ function initPlayground () {
   initResizeHandle();
 }
 
-/* 6) 코드 실행 ----------------------------------------------------------- */
+/* 6) 코드 실행 */
 async function runCode () {
   if (isRunning) return;
   isRunning = true;
@@ -280,7 +308,7 @@ async function runCode () {
   }
 }
 
-/* 7) 저장 / 불러오기 ----------------------------------------------------- */
+/* 7) 저장 / 불러오기 */
 function saveProject () {
   const xml = Blockly.serialization.workspaces.save(workspace);
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
@@ -300,7 +328,7 @@ function loadProject () {
   } catch (e) { console.error(e); }
 }
 
-/* 8) 공유 --------------------------------------------------------------- */
+/* 8) 공유 */
 function shareProject () {
   const xml = Blockly.serialization.workspaces.save(workspace);
   const payload = btoa(JSON.stringify({
@@ -308,32 +336,33 @@ function shareProject () {
     blocks: xml
   }));
   navigator.clipboard.writeText(payload)
-    .then(() => alert('클립보드에 복사했습니다!'))
-    .catch(err => alert('복사 실패: ' + err));
+    /* ────────────── ★ 수정: alert → 터미널 메시지 ────────────── */
+    .then(() => terminal.writeln('\u001b[32m[Share]\u001b[0m 클립보드에 복사했습니다!'))
+    .catch(err => terminal.writeln(`\u001b[31m[Share Error]\u001b[0m ${err.message}`));
+    /* ──────────────────────────────────────────────────────────── */
 }
 
-/* 9) 에디터‑터미널 리사이즈 핸들 --------------------------------------- */
+/* 9) 리사이즈 핸들 */
 function initResizeHandle () {
   const handle   = document.getElementById('resize-handle');
-  const leftPane = document.getElementById('blockly-container');
-  let   startX, startWidth;
-
-  const onMouseMove = e => {
-    const delta = e.clientX - startX;
-    leftPane.style.flex = `0 0 ${Math.max(100, startWidth + delta)}px`;
-    Blockly.svgResize(workspace);
-  };
-  const onMouseUp = () => {
-    handle.classList.remove('active');
-    window.removeEventListener('mousemove', onMouseMove);
-    window.removeEventListener('mouseup',   onMouseUp);
-  };
+  const blockDiv = document.getElementById('blockly-container');
+  let dragging = false, startX = 0, startWidth = 0;
 
   handle.addEventListener('mousedown', e => {
-    startX      = e.clientX;
-    startWidth  = leftPane.getBoundingClientRect().width;
+    dragging   = true;
+    startX     = e.clientX;
+    startWidth = blockDiv.offsetWidth;
     handle.classList.add('active');
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup',   onMouseUp);
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    blockDiv.style.width = `${Math.max(100, startWidth + dx)}px`;
+    Blockly.svgResize(workspace);
+  });
+  window.addEventListener('mouseup', () => {
+    dragging = false;
+    handle.classList.remove('active');
   });
 }
