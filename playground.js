@@ -1,10 +1,12 @@
 /* ─────────────────────────────────────────────────────────
- *  C‑Terminal Playground  —  Full Version
+ *  C‑Terminal Playground  —  Full Version (Dialog‑free)
  *      · process 폴리필
- *      · CustomRenderer(둥근 모서리 + 4px 테두리)
+ *      · CustomRenderer(둥근 모서리 + 4 px 테두리)
  *      · ConstantProvider 오버라이드
- *      · 원본 app.js 전체 툴박스 JSON
+ *      · Full Toolbox JSON
  *      · 실행 / 저장 / 불러오기 / 공유 / 리사이즈
+ *      · ★ 모든 alert / prompt / confirm / console.* 을
+ *          XTerm 터미널 내부로 강제로 고정(Seal)
  * ───────────────────────────────────────────────────────── */
 
 let workspace;
@@ -23,7 +25,30 @@ const STORAGE_KEY = 'c‑terminal‑playground‑project';
   };
 })();
 
-/* 1) ConstantProvider – 모서리/탭/노치 원본 값 */
+/* 0‑1) 다이얼로그·콘솔 선제 차단  ★ FIX ──────────────────────
+ *   ─ 다른 스크립트가 재정의 못하도록 writable:false, configurable:false
+ *   ─ 터미널 초기화 전에는 console 로깅만 수행
+ */
+(function sealDialogs () {
+  const noopPrompt  = () => '';   // 터미널 준비 전 prompt → 빈 문자열
+  const noopConfirm = () => true; // confirm → 무조건 true
+  const noopAlert   = msg => console.log('[alert]', msg);
+
+  const seal = (key, value) => {
+    Object.defineProperty(window, key, {
+      value, writable:false, configurable:false, enumerable:false
+    });
+  };
+
+  seal('alert',   noopAlert);
+  seal('prompt',  noopPrompt);
+  seal('confirm', noopConfirm);
+
+  // console.* 도 재정의 방지
+  ['log','info','warn','error'].forEach(fn => seal(`console_${fn}`, console[fn]));
+})();
+
+/* 1) ConstantProvider – 모서리/탭/노치 원본 값 -------------------------- */
 const CP = Blockly.blockRendering.ConstantProvider.prototype;
 CP.CORNER_RADIUS          = 25;
 CP.OUTSIDE_CORNER_RADIUS  = 25;
@@ -34,11 +59,11 @@ CP.NOTCH_HEIGHT           = 15;
 CP.TAB_HEIGHT             = 20;
 CP.TAB_RADIUS             = 20;
 
-/* 2) CustomRenderer – 4 px 테두리 */
+/* 2) CustomRenderer – 4 px 테두리 -------------------------------------- */
 const BORDER_WIDTH = 4;
 class CustomRenderer extends Blockly.blockRendering.Renderer {
   makePathObject (constants) {
-    const obj = super.makePathObject(constants);
+    const obj  = super.makePathObject(constants);
     const orig = obj.drawSolidHighlighted;
     obj.drawSolidHighlighted = function (pattern, colour) {
       orig.call(this, pattern, colour);
@@ -56,28 +81,28 @@ class CustomRenderer extends Blockly.blockRendering.Renderer {
 }
 Blockly.blockRendering.register('custom_renderer', CustomRenderer);
 
-/* 3) Custom Theme – 원본 색상 */
+/* 3) Custom Theme – 원본 색상 ------------------------------------------ */
 const customTheme = Blockly.Theme.defineTheme('simpleRounded', {
   base: Blockly.Themes.Classic,
   blockStyles: {
-    logic_blocks:     { colourPrimary:'#6b96c1' },
-    loop_blocks:      { colourPrimary:'#6bc16b' },
-    math_blocks:      { colourPrimary:'#5cd65c' },
-    text_blocks:      { colourPrimary:'#c16bc1' },
-    variable_blocks:  { colourPrimary:'#c18b6b' },
-    procedure_blocks: { colourPrimary:'#8b6bc1' },
-    terminal_blocks:  { colourPrimary:'#5a5a5a' },
-    styling_blocks:   { colourPrimary:'#ffad33' },
-    output_blocks:    { colourPrimary:'#33adff' },
-    animation_blocks: { colourPrimary:'#ff3377' },
-    chart_blocks:     { colourPrimary:'#33ddff' },
-    ui_blocks:        { colourPrimary:'#b333ff' },
-    list_blocks:      { colourPrimary:'#c18b6b' },
-    array_blocks:     { colourPrimary:'#c18b6b' },
-    string_blocks:    { colourPrimary:'#c16bc1' },
-    time_blocks:      { colourPrimary:'#6b96c1' },
-    game_blocks:      { colourPrimary:'#ff6b6b' },
-    algorithm_blocks: { colourPrimary:'#8d6e63' }
+    logic_blocks     : { colourPrimary:'#6b96c1' },
+    loop_blocks      : { colourPrimary:'#6bc16b' },
+    math_blocks      : { colourPrimary:'#5cd65c' },
+    text_blocks      : { colourPrimary:'#c16bc1' },
+    variable_blocks  : { colourPrimary:'#c18b6b' },
+    procedure_blocks : { colourPrimary:'#8b6bc1' },
+    terminal_blocks  : { colourPrimary:'#5a5a5a' },
+    styling_blocks   : { colourPrimary:'#ffad33' },
+    output_blocks    : { colourPrimary:'#33adff' },
+    animation_blocks : { colourPrimary:'#ff3377' },
+    chart_blocks     : { colourPrimary:'#33ddff' },
+    ui_blocks        : { colourPrimary:'#b333ff' },
+    list_blocks      : { colourPrimary:'#c18b6b' },
+    array_blocks     : { colourPrimary:'#c18b6b' },
+    string_blocks    : { colourPrimary:'#c16bc1' },
+    time_blocks      : { colourPrimary:'#6b96c1' },
+    game_blocks      : { colourPrimary:'#ff6b6b' },
+    algorithm_blocks : { colourPrimary:'#8d6e63' }
   },
   componentStyles: {
     workspaceBackgroundColour : '#f5f5f5',
@@ -247,7 +272,7 @@ const toolbox = {
   ]
 };
 
-/* 5) 초기화 */
+/* 5) 초기화 -------------------------------------------------------------- */
 window.addEventListener('DOMContentLoaded', () => {
   initPlayground();
   loadProject();
@@ -267,13 +292,49 @@ function initPlayground () {
     grid      : { spacing:20, length:3, colour:'#ccc', snap:true }
   });
 
-  /* ────────────── ★ 수정: 전역 등록 & 블록리 로드 신호 ───────────── */
-  window.workspace = workspace;                    // custom_blocks.js에서 사용
-  document.dispatchEvent(new Event('blocklyLoaded'));// 추가 카테고리 정상 반영
-  /* ──────────────────────────────────────────────────────────────── */
+  // custom_blocks.js 호환
+  window.workspace = workspace;
+  document.dispatchEvent(new Event('blocklyLoaded'));
 
   terminal = new Terminal({ theme:{ background:'#1e1e1e', foreground:'#f8f8f8' } });
   terminal.open(document.getElementById('terminal'));
+
+  /* 5‑1) 터미널 준비 후 다이얼로그 재매핑  ★ FIX */
+  (function hijackDialogsToTerminal () {
+    const write   = txt => terminal.writeln(String(txt));
+    const promptT = async msg => {
+      let buf = ''; write(`${msg} `);
+      return new Promise(resolve => {
+        const h = data => {
+          const c = data.charCodeAt(0);
+          if (c === 13) { write(''); terminal.offData(h); return resolve(buf); }
+          if (c === 8 || c === 127) { if (buf.length){buf=buf.slice(0,-1); terminal.write('\b \b');} return; }
+          buf += data; terminal.write(data);
+        };
+        terminal.onData(h);
+      });
+    };
+    const confirmT = async msg => /^y/i.test((await promptT(`${msg} (y/n)`)).trim());
+
+    const seal = (k,v)=>Object.defineProperty(window,k,{value:v,writable:false,configurable:false});
+    seal('alert',   write);
+    seal('prompt',  promptT);
+    seal('confirm', confirmT);
+
+    // console 계열 재정의 + Seal
+    ['log','info','warn','error'].forEach(fn=>{
+      const tag = fn==='log'?'':
+                  fn==='info'?'[Info]':
+                  fn==='warn'?'[Warn]':
+                  '[Error]';
+      const sty = fn==='warn' ? '\u001b[33m' :
+                  fn==='error'?'\u001b[31m' : '';
+      const f = (...a)=>write(`${sty}${tag}${tag?' ':''}${a.join(' ')}\u001b[0m`);
+      seal(`console_${fn}`, f); // 이미 이전 단계에 console_* 로 보존
+      console[fn] = f;
+    });
+  })();
+  /* ─────────────────────────────────────────────────────── */
 
   document.getElementById('run-btn')  .addEventListener('click', runCode);
   document.getElementById('save-btn') .addEventListener('click', saveProject);
@@ -283,7 +344,7 @@ function initPlayground () {
   initResizeHandle();
 }
 
-/* 6) 코드 실행 */
+/* 6) 코드 실행 ----------------------------------------------------------- */
 async function runCode () {
   if (isRunning) return;
   isRunning = true;
@@ -293,29 +354,24 @@ async function runCode () {
   terminal.clear();
   const code = Blockly.JavaScript.workspaceToCode(workspace);
 
-  const nativeLog = console.log;
-  console.log = (...args) => terminal.writeln(args.join(' '));
-
-  try {
-    /* eslint-disable no-eval */
+  try { /* eslint-disable no-eval */
     await eval(`(async () => { ${code} })()`);
   } catch (err) {
     terminal.writeln(`\u001b[31m[Error] ${err.message}\u001b[0m`);
   } finally {
-    console.log = nativeLog;
     runBtn.innerHTML = '<i class="fas fa-play"></i> 실행';
     isRunning = false;
   }
 }
 
-/* 7) 저장 / 불러오기 */
+/* 7) 저장 / 불러오기 ----------------------------------------------------- */
 function saveProject () {
   const xml = Blockly.serialization.workspaces.save(workspace);
   localStorage.setItem(STORAGE_KEY, JSON.stringify({
     title : document.getElementById('project-title').value.trim() || '제목 없는 프로젝트',
     blocks: xml
   }));
-  document.getElementById('project-status').textContent = '저장됨';
+  terminal.writeln('\u001b[32m[Save]\u001b[0m 저장 완료');
 }
 function loadProject () {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -324,25 +380,21 @@ function loadProject () {
     const data = JSON.parse(raw);
     document.getElementById('project-title').value = data.title || '제목 없는 프로젝트';
     Blockly.serialization.workspaces.load(data.blocks, workspace);
-    document.getElementById('project-status').textContent = '로드됨';
+    terminal.writeln('\u001b[32m[Load]\u001b[0m 프로젝트 로드');
   } catch (e) { console.error(e); }
 }
 
-/* 8) 공유 */
+/* 8) 공유 --------------------------------------------------------------- */
 function shareProject () {
   const xml = Blockly.serialization.workspaces.save(workspace);
-  const payload = btoa(JSON.stringify({
-    title : document.getElementById('project-title').value,
-    blocks: xml
-  }));
-  navigator.clipboard.writeText(payload)
-    /* ────────────── ★ 수정: alert → 터미널 메시지 ────────────── */
-    .then(() => terminal.writeln('\u001b[32m[Share]\u001b[0m 클립보드에 복사했습니다!'))
-    .catch(err => terminal.writeln(`\u001b[31m[Share Error]\u001b[0m ${err.message}`));
-    /* ──────────────────────────────────────────────────────────── */
+  navigator.clipboard.writeText(
+    btoa(JSON.stringify({ title:document.getElementById('project-title').value, blocks:xml }))
+  )
+    .then(()=>terminal.writeln('\u001b[32m[Share]\u001b[0m 클립보드에 복사 완료!'))
+    .catch(err=>terminal.writeln(`\u001b[31m[Share Error]\u001b[0m ${err.message}`));
 }
 
-/* 9) 리사이즈 핸들 */
+/* 9) 에디터‑터미널 리사이즈 핸들 --------------------------------------- */
 function initResizeHandle () {
   const handle   = document.getElementById('resize-handle');
   const blockDiv = document.getElementById('blockly-container');
