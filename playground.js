@@ -244,6 +244,32 @@ const toolbox = {
     { kind:'category', name:'알고리즘', colour:'#8d6e63', contents:[
       {kind:'block',type:'algorithm_sort_array'},
       {kind:'block',type:'algorithm_search_array'}
+    ]},
+    { kind:'category', name:'상호작용', colour:'#FF5722', contents:[
+      {kind:'block',type:'interaction_text_input'},
+      {kind:'block',type:'interaction_number_input'},
+      {kind:'block',type:'interaction_confirm'},
+      {kind:'block',type:'interaction_select'},
+      {kind:'block',type:'interaction_password'},
+      {kind:'block',type:'interaction_autocomplete'},
+      {kind:'block',type:'interaction_command_history'},
+      {kind:'block',type:'interaction_color_picker'}
+    ]},
+    { kind:'category', name:'키보드 제어', colour:'#E91E63', contents:[
+      {kind:'block',type:'interaction_wait_key'},
+      {kind:'block',type:'interaction_wait_specific_key'},
+      {kind:'block',type:'interaction_on_key'}
+    ]},
+    { kind:'category', name:'메뉴 및 폼', colour:'#9C27B0', contents:[
+      {kind:'block',type:'interaction_show_menu'},
+      {kind:'block',type:'interaction_form_input'},
+      {kind:'block',type:'interaction_tooltip'},
+      {kind:'block',type:'interaction_progress_bar_interactive'}
+    ]},
+    { kind:'category', name:'게임 상호작용', colour:'#FF4081', contents:[
+      {kind:'block',type:'interaction_arrow_control'},
+      {kind:'block',type:'interaction_joystick'},
+      {kind:'block',type:'interaction_game_handler'}
     ]}
   ]
 };
