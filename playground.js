@@ -468,6 +468,9 @@ function initPlayground () {
 
   document.getElementById('run-btn')  .addEventListener('click', runCode);
   document.getElementById('save-btn') .addEventListener('click', saveProject);
+  document.getElementById('export-btn').addEventListener('click', exportProject);
+  document.getElementById('import-btn').addEventListener('click', () => document.getElementById('file-input').click());
+  document.getElementById('file-input').addEventListener('change', importProject);
   document.getElementById('share-btn').addEventListener('click', shareProject);
   document.getElementById('clear-terminal-btn').addEventListener('click', () => terminal.clear());
 
@@ -529,7 +532,99 @@ function loadProject() {
   }
 }
 
-/* 9) 공유 - 수정된 버전 */
+/* 9) 프로젝트 내보내기 (.ctm 파일로) */
+function exportProject() {
+  try {
+    const xml = Blockly.serialization.workspaces.save(workspace);
+    const projectData = {
+      version: '1.0',
+      title: document.getElementById('project-title').value.trim() || '제목 없는 프로젝트',
+      created: new Date().toISOString(),
+      blocks: xml,
+      metadata: {
+        platform: 'C-Terminal Playground',
+        blocklyVersion: '9.3.3'
+      }
+    };
+    
+    const blob = new Blob([JSON.stringify(projectData, null, 2)], { 
+      type: 'application/json' 
+    });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${projectData.title.replace(/[^a-zA-Z0-9\s가-힣]/g, '')}.ctm`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    // 터미널에 성공 메시지 출력
+    terminal.writeln(`\u001b[32m[성공] 프로젝트가 '${a.download}' 파일로 내보내졌습니다.\u001b[0m`);
+    
+  } catch (error) {
+    terminal.writeln(`\u001b[31m[오류] 파일 내보내기 실패: ${error.message}\u001b[0m`);
+  }
+}
+
+/* 10) 프로젝트 불러오기 (.ctm 파일에서) */
+function importProject(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  if (!file.name.endsWith('.ctm')) {
+    terminal.writeln('\u001b[31m[오류] .ctm 파일만 불러올 수 있습니다.\u001b[0m');
+    event.target.value = ''; // 파일 입력 초기화
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const projectData = JSON.parse(e.target.result);
+      
+      // 데이터 검증
+      if (!projectData.blocks) {
+        throw new Error('유효하지 않은 프로젝트 파일입니다.');
+      }
+      
+      // 현재 작업 공간 지우기
+      workspace.clear();
+      
+      // 프로젝트 데이터 로드
+      document.getElementById('project-title').value = projectData.title || '제목 없는 프로젝트';
+      Blockly.serialization.workspaces.load(projectData.blocks, workspace);
+      
+      // 상태 업데이트
+      document.getElementById('project-status').textContent = '불러옴';
+      
+      // 터미널에 성공 메시지 출력
+      terminal.writeln(`\u001b[32m[성공] '${file.name}' 프로젝트를 불러왔습니다.\u001b[0m`);
+      if (projectData.created) {
+        terminal.writeln(`\u001b[36m[정보] 생성일: ${new Date(projectData.created).toLocaleString('ko-KR')}\u001b[0m`);
+      }
+      if (projectData.version) {
+        terminal.writeln(`\u001b[36m[정보] 파일 버전: ${projectData.version}\u001b[0m`);
+      }
+      
+    } catch (error) {
+      terminal.writeln(`\u001b[31m[오류] 파일 불러오기 실패: ${error.message}\u001b[0m`);
+    }
+    
+    // 파일 입력 초기화
+    event.target.value = '';
+  };
+  
+  reader.onerror = function() {
+    terminal.writeln('\u001b[31m[오류] 파일을 읽을 수 없습니다.\u001b[0m');
+    event.target.value = '';
+  };
+  
+  reader.readAsText(file);
+}
+
+/* 11) 공유 - 수정된 버전 */
 function shareProject() {
   const xml = Blockly.serialization.workspaces.save(workspace);
   const payload = btoa(JSON.stringify({
@@ -547,7 +642,7 @@ function shareProject() {
     });
 }
 
-/* 10) 리사이즈 핸들 */
+/* 12) 리사이즈 핸들 */
 function initResizeHandle() {
   const handle   = document.getElementById('resize-handle');
   const blockDiv = document.getElementById('blockly-container');
